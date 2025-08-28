@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "../services/api";
 import { useNavigate } from "react-router-dom";
-const BASE_URL =import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 const categories = ["Dance", "Singing", "Instruments"];
 const genres = ["Hip-hop", "Classical", "Jazz", "Pop"];
 const levels = ["Beginner", "Intermediate", "Advanced"];
@@ -27,16 +27,12 @@ export default function Upload() {
     e.preventDefault();
     setMessage("");
     try {
-      await axios.post(`/videos/youtube`, form, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      await axios.post("/videos/upload", form); // Corrected endpoint
       setMessage("✅ Video uploaded successfully!");
-      setTimeout(() => navigate("/learn"), 1500);
+      setTimeout(() => navigate("/talent"), 1500); // Navigate to a more relevant page
     } catch (err) {
       console.error(err);
-      setMessage(" Failed to upload video. Please try again.");
+      setMessage("❌ Failed to upload video. Please try again.");
     }
   };
 
@@ -49,7 +45,7 @@ export default function Upload() {
           boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
         }}
       >
-        <h1 className="text-3xl font-bold mb-6 text-center text-red-100">Upload Your Video</h1>
+        <h1 className="text-3xl font-bold mb-6 text-center text-indigo-200">Upload Your Talent</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <input
@@ -58,7 +54,7 @@ export default function Upload() {
             placeholder="Video Title"
             value={form.title}
             onChange={handleChange}
-            className="w-full px-4 py-2 rounded-lg border bg-white/20 dark:bg-gray-900 text-white placeholder-gray-300"
+            className="w-full px-4 py-2 rounded-lg border bg-white/20 dark:bg-gray-700 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             required
           />
 
@@ -67,7 +63,7 @@ export default function Upload() {
             placeholder="Description"
             value={form.description}
             onChange={handleChange}
-            className="w-full px-4 py-2 rounded-lg border bg-white/20 dark:bg-gray-900 text-white placeholder-gray-300"
+            className="w-full px-4 py-2 rounded-lg border bg-white/20 dark:bg-gray-700 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
 
           <div className="flex flex-col md:flex-row gap-4 text-black">
@@ -75,13 +71,11 @@ export default function Upload() {
               name="category"
               value={form.category}
               onChange={handleChange}
-              className="flex-1 px-4 py-2 rounded-lg border bg-white/20 dark:bg-gray-900 text-black"
+              className="flex-1 px-4 py-2 rounded-lg border bg-white dark:bg-gray-700 dark:text-white"
               required
             >
               {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
 
@@ -89,13 +83,11 @@ export default function Upload() {
               name="genre"
               value={form.genre}
               onChange={handleChange}
-              className="flex-1 px-4 py-2 rounded-lg border bg-white dark:bg-gray-900 text-"
+              className="flex-1 px-4 py-2 rounded-lg border bg-white dark:bg-gray-700 dark:text-white"
               required
             >
               {genres.map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
+                <option key={g} value={g}>{g}</option>
               ))}
             </select>
 
@@ -103,13 +95,11 @@ export default function Upload() {
               name="level"
               value={form.level}
               onChange={handleChange}
-              className="flex-1 px-4 py-2 rounded-lg border bg-white/20 dark:bg-white-900 text-black"
+              className="flex-1 px-4 py-2 rounded-lg border bg-white dark:bg-gray-700 dark:text-white"
               required
             >
               {levels.map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
+                <option key={l} value={l}>{l}</option>
               ))}
             </select>
           </div>
@@ -117,23 +107,25 @@ export default function Upload() {
           <input
             type="url"
             name="video_url"
-            placeholder="Video URL (e.g., Cloudinary/S3 link)"
+            placeholder="Video URL (e.g., YouTube/S3 link)"
             value={form.video_url}
             onChange={handleChange}
-            className="w-full px-4 py-2 rounded-lg border bg-white/20 dark:bg-gray-900 text-white placeholder-gray-300"
+            className="w-full px-4 py-2 rounded-lg border bg-white/20 dark:bg-gray-700 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             required
           />
 
           <button
             type="submit"
-            className="w-full py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold shadow-md hover:shadow-xl transition"
+            className="w-full py-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold shadow-md hover:shadow-xl transition-transform transform hover:scale-105"
           >
             Upload Video
           </button>
         </form>
 
         {message && (
-          <p className="mt-4 text-center font-medium text-sm text-blue-300">{message}</p>
+          <p className={`mt-4 text-center font-medium text-sm ${message.includes("✅") ? "text-green-300" : "text-red-300"}`}>
+            {message}
+          </p>
         )}
       </div>
     </div>

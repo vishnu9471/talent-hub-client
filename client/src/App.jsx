@@ -1,16 +1,14 @@
-import React from "react" ;
+import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
-import Learn from "./pages/learn"; 
+import Learn from "./pages/learn";
 import Upload from "./pages/Upload";
 import Profile from "./pages/Profile";
 import Talent from "./pages/Talent";
-import CategoryPage from "./pages/CategoryPage";
-import DanceVideos from "./pages/DanceVideos";
 import VideoCategoryPage from "./pages/VideoCategoryPage";
 import PlaylistPage from "./pages/PlaylistPage";
 import ForgotPassword from "./components/ForgotPassword";
@@ -26,7 +24,7 @@ function App() {
         </div>
 
         {/* Page content */}
-        <main className="pt-10 px-"> 
+        <main className="pt-20 px-4 sm:px-6">
           <Routes>
             {/* Public pages */}
             <Route path="/" element={<Home />} />
@@ -35,17 +33,13 @@ function App() {
 
             {/* Auth-required pages */}
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/learn" element={<Learn />} /> 
+            <Route path="/learn" element={<Learn />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/profile/:id" element={<Profile />} />
 
             {/* Talent & video routes */}
             <Route path="/talent" element={<Talent />} />
-            <Route path="/category/:category" element={<CategoryPage />} />
-            <Route path="/videos/dance" element={<DanceVideos />} />
             <Route path="/videos/:category" element={<VideoCategoryPage />} />
-
-            {/* Playlists */}
             <Route path="/playlist" element={<PlaylistPage />} />
 
             {/* Password reset & verification */}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react" ;
+import React, { useEffect, useState } from "react";
 import axios from "../services/api";
 import { Link } from "react-router-dom";
 
@@ -11,28 +11,36 @@ const Talent = () => {
     genre: "All",
     level: "All",
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const categories = ["All", "Dance", "Singing", "Instrument"];
   const genres = ["All", "Hip-hop", "Classical", "Jazz", "Pop"];
   const levels = ["All", "Beginner", "Intermediate", "Advanced"];
-    
 
-  // Fetch uploaded videos
   // Fetch uploaded videos
   useEffect(() => {
     const fetchVideos = async () => {
+      setLoading(true);
       try {
-        const res = await axios.get(`/videos/get-all-video`); // ✅ Updated API endpoint
-        setVideos(res.data);
-        setFilteredVideos(res.data);
+        const res = await axios.get(`/videos/get-all-video`);
+        if (Array.isArray(res.data)) {
+          setVideos(res.data);
+          setFilteredVideos(res.data);
+        } else {
+          setError("Unexpected response format");
+        }
       } catch (err) {
+        setError("Failed to fetch videos.");
         console.error("Failed to fetch videos", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchVideos();
   }, []);
 
-  // Filter videos based on search + dropdowns
+  // Filter videos based on search and dropdowns
   useEffect(() => {
     const filtered = videos.filter((v) => {
       return (
@@ -104,8 +112,14 @@ const Talent = () => {
         </select>
       </div>
 
+      {/* Loading State */}
+      {loading && <p className="text-center text-gray-500">Loading videos...</p>}
+
+      {/* Error State */}
+      {error && <p className="text-center text-red-500">{error}</p>}
+
       {/* Video Cards */}
-      {filteredVideos.length === 0 ? (
+      {filteredVideos.length === 0 && !loading ? (
         <p className="text-center text-gray-500">No videos found.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">

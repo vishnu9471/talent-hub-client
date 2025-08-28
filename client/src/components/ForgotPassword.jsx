@@ -19,7 +19,7 @@ const ForgotPassword = () => {
 
   const handleSendOTP = async () => {
     try {
-      const res = await api.post(`/api/auth/forgot-password`, { email });
+      const res = await api.post(`/auth/forgot-password`, { email });
       alert(res.data.message);
       setStep(2);
     } catch (error) {
@@ -30,7 +30,7 @@ const ForgotPassword = () => {
   const handleVerifyOTP = async () => {
     setLoading(true);
     try {
-      const res = await api.post(`/api/auth/verify-otp`, {
+      const res = await api.post(`/auth/verify-otp`, {
         email: email.trim(),
         otp: otp.trim(),
       });
@@ -53,7 +53,7 @@ const ForgotPassword = () => {
       return;
     }
     try {
-      const res = await api.post(`/api/auth/reset-password`, {
+      const res = await api.post(`/auth/reset-password`, {
         email,
         newPassword,
         confirmPassword,

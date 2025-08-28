@@ -14,7 +14,7 @@ export default function CategoryPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await api.get(`/api/posts/videos`, {
+        const res = await api.get(`/posts/videos`, {
           withCredentials: true, // if cookies/session needed
         });
 

@@ -12,8 +12,8 @@ const Profile = () => {
     const fetchUserAndVideos = async () => {
       try {
          const [userRes, videosRes] = await Promise.all([
-          axios.get(`/api/users/${id}`), 
-          axios.get("/api/posts/videos"), 
+          axios.get(`/users/${id}`), 
+          axios.get("/posts/videos"), 
         ]);
         setUserInfo(userRes.data);
         setUserVideos(

@@ -13,7 +13,7 @@ const Dashboard = () => {
   const handleUpload = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`/api/posts/upload`, {
+      await axios.post(`/posts/upload`, {
         title,
         category,
         video_url: url,
@@ -33,7 +33,7 @@ const Dashboard = () => {
 
   const fetchVideos = async () => {
     try {
-      const res = await axios.get(`/api/posts/videos`);
+      const res = await axios.get(`/posts/videos`);
       setVideos(res.data);
     } catch (err) {
       console.error("Fetch failed");

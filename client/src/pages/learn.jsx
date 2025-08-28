@@ -21,7 +21,7 @@ const Learn = () => {
   useEffect(() => {
     const fetchVideos = async () => {
       try {
-        const { data } = await api.get("/api/videos/get-all-video");
+        const { data } = await api.get("/videos/get-all-video");
         console.log("Videos from server:", data);
 
         const normalized = data.map((video) => ({

@@ -22,7 +22,7 @@ const Talent = () => {
   useEffect(() => {
     const fetchVideos = async () => {
       try {
-        const res = await axios.get(`/api/videos/get-all-video`); // ✅ Updated API endpoint
+        const res = await axios.get(`/videos/get-all-video`); // ✅ Updated API endpoint
         setVideos(res.data);
         setFilteredVideos(res.data);
       } catch (err) {

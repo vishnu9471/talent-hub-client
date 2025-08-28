@@ -15,24 +15,55 @@ export default function Upload() {
     category: "Dance",
     genre: "Hip-hop",
     level: "Beginner",
-    video_url: "",
+    video_url: "", // Initially this can hold file as well
   });
-
+  const [videoFile, setVideoFile] = useState(null); // To hold the video file
+  const [thumbnailFile, setThumbnailFile] = useState(null); // To hold thumbnail image file
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
-  // Handle input change
+  // Handle input change for text fields
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  // Handle file selection
+  const handleFileChange = (e) => {
+    const { name, files } = e.target;
+    if (name === "video_url") {
+      setVideoFile(files[0]);
+    } else if (name === "thumbnail_url") {
+      setThumbnailFile(files[0]);
+    }
   };
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage(""); // Clear previous messages
+
+    const formData = new FormData();
+    formData.append("title", form.title);
+    formData.append("description", form.description);
+    formData.append("category", form.category);
+    formData.append("genre", form.genre);
+    formData.append("level", form.level);
+    
+    // Append the video and thumbnail files
+    if (videoFile) {
+      formData.append("video_url", videoFile);
+    }
+    if (thumbnailFile) {
+      formData.append("thumbnail_url", thumbnailFile);
+    }
+
     try {
       // Make a POST request to upload the video
-      await axios.post("/videos/upload", form);
+      await axios.post("/videos/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       setMessage("✅ Video uploaded successfully!");
       setTimeout(() => navigate("/talent"), 1500); // Redirect to /talent after success
     } catch (err) {
@@ -110,16 +141,23 @@ export default function Upload() {
             </select>
           </div>
 
-          {/* Video URL Input */}
-          <input
-            type="url"
-            name="video_url"
-            placeholder="Video URL (e.g., YouTube/S3 link)"
-            value={form.video_url}
-            onChange={handleChange}
-            className="w-full px-4 py-2 rounded-lg border bg-white/20 dark:bg-gray-700 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            required
-          />
+          {/* Video and Thumbnail File Upload */}
+          <div className="flex flex-col gap-4">
+            <input
+              type="file"
+              name="video_url"
+              onChange={handleFileChange}
+              className="w-full px-4 py-2 rounded-lg border bg-white/20 dark:bg-gray-700 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              required
+            />
+
+            <input
+              type="file"
+              name="thumbnail_url"
+              onChange={handleFileChange}
+              className="w-full px-4 py-2 rounded-lg border bg-white/20 dark:bg-gray-700 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
 
           {/* Submit Button */}
           <button

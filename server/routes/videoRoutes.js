@@ -1,52 +1,35 @@
 import express from "express";
 import {
-  uploadVideoToCloudinary,
-  uploadYouTubeVideo,
+  uploadYouTubeVideo, // Handling YouTube video URL upload
   getAllVideos,
   getMyVideos,
   deleteVideo,
   getFilteredVideos,
   getVideosByCategory
-}from "../controllers/videoController.js";
+} from "../controllers/videoController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
-import multer from "multer";
-import { storage } from "../utils/cloudinary.js";
 
 const router = express.Router();
-const upload = multer({ storage });
 
+// Route for uploading YouTube videos by URL (No file upload here)
+router.post("/youtube", verifyToken, uploadYouTubeVideo);
 
-router.post(
-  "/",
-  verifyToken,
-  upload.single("video"),
-  (req, res, next) => {
-    if (!req.file) {
-      return res.status(400).json({ error: "No video file uploaded" });
-    }
-    next();
-  },
-  uploadVideoToCloudinary
-);
+// Get all videos
+router.get("/get-all-video", getAllVideos);
 
+// Get videos uploaded by the current user
+router.get("/my-video", verifyToken, getMyVideos);
 
-router.post("/youtube",verifyToken,uploadYouTubeVideo);
+// Get videos by category
+router.get("/category/:category", getVideosByCategory);
 
+// Filter videos based on category, genre, and level
+router.get("/filter", getFilteredVideos);
 
-router.get("/get-all-video",getAllVideos);
+// Delete a video by its ID
+router.delete("/:id", verifyToken, deleteVideo);
 
-router.get("/my-video",verifyToken,getMyVideos);
-
-router.get("/category/:category",getVideosByCategory);
-
-router.get("/filter",getFilteredVideos);
-
-
-
-router.delete("/:id", verifyToken,deleteVideo);
-
-
-
+// A test route for checking YouTube video routes
 router.get("/youtube-test", (req, res) => {
   console.log("YouTube Test Route Hit");
   res.json({ message: "Video routes are working fine" });

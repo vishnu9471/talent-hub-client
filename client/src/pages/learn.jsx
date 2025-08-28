@@ -1,9 +1,5 @@
-import React, { useEffect, useState } from "react" ;
-import axios from "axios";
-import api from "../services/api";
-
-// Base API URL from .env (e.g. VITE_API_URL=https://your-backend.com)
-
+import React, { useEffect, useState } from "react";
+import axios from "../services/api";
 
 const genres = ["all", "hip-hop", "classical", "jazz", "pop"];
 const levels = ["all", "beginner", "intermediate", "advanced"];
@@ -21,19 +17,9 @@ const Learn = () => {
   useEffect(() => {
     const fetchVideos = async () => {
       try {
-        const { data } = await api.get("/videos/get-all-video");
-        console.log("Videos from server:", data);
-
-        const normalized = data.map((video) => ({
-          ...video,
-          genre: video.genre?.toLowerCase() || "",
-          level: video.level?.toLowerCase() || "",
-          tags: video.tags?.toLowerCase() || "",
-          title: video.title || "",
-        }));
-
-        setVideos(normalized);
-        setFiltered(normalized);
+        const { data } = await axios.get("/videos/get-all-video");
+        setVideos(data);
+        setFiltered(data);
       } catch (error) {
         console.error("Error fetching videos:", error);
       } finally {
@@ -76,10 +62,10 @@ const Learn = () => {
       <h1 className="text-3xl font-bold mb-6 text-red-100">🎓 Learn Videos</h1>
 
       {/* Search & Filters */}
-      <div className="flex flex-wrap gap-4 mb-8">
+      <div className="flex flex-wrap gap-4 mb-8 justify-center">
         <input
           type="text"
-          placeholder="Search by title or tags..."
+          placeholder="🔍 Search by title or tags..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="px-4 py-2 rounded bg-white border text-gray-700 shadow-sm focus:outline-none w-64"
@@ -108,64 +94,64 @@ const Learn = () => {
         </select>
       </div>
 
-      {/* Video Cards */}
-      {loading ? (
-        <p className="text-gray-600">Loading...</p>
-      ) : filtered.length === 0 ? (
-        <p className="text-red-500">No videos found for selected filters.</p>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-            {filtered.slice(0, visibleCount).map((video) => (
-              <div
-                key={video._id}
-                className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl shadow-lg p-4 transform transition hover:-translate-y-1 hover:scale-105 duration-300 cursor-pointer"
-                onClick={() => openModal(video)}
-              >
-                <div className="relative pb-[56.25%] rounded overflow-hidden shadow-inner">
-                  {video.video_url?.includes("youtube.com") ? (
-                    <iframe
-                      src={video.video_url.replace("watch?v=", "embed/")}
-                      className="absolute top-0 left-0 w-full h-full rounded"
-                      allowFullScreen
-                      title={video.title}
-                    />
-                  ) : (
-                    <video
-                      src={video.video_url}
-                      controls
-                      className="absolute top-0 left-0 w-full h-full object-cover rounded"
-                    />
-                  )}
-                </div>
-                <div className="mt-4 space-y-1">
-                  <h2 className="text-lg font-bold truncate">{video.title}</h2>
-                  <p className="text-sm opacity-90 line-clamp-2">{video.description}</p>
-                  <div className="flex justify-between text-xs mt-2">
-                    <span className="bg-white text-indigo-600 px-2 py-1 rounded-md">
-                      {video.genre || "N/A"}
-                    </span>
-                    <span className="bg-white text-purple-600 px-2 py-1 rounded-md">
-                      {video.level || "N/A"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Loading State */}
+      {loading && <p className="text-gray-600">Loading...</p>}
 
-          {/* Load More */}
-          {visibleCount < filtered.length && (
-            <div className="flex justify-center mt-8">
-              <button
-                onClick={handleLoadMore}
-                className="px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 shadow-md"
-              >
-                Load More
-              </button>
+      {/* No Videos Found */}
+      {filtered.length === 0 && !loading && (
+        <p className="text-red-500">No videos found for the selected filters.</p>
+      )}
+
+      {/* Video Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {filtered.slice(0, visibleCount).map((video) => (
+          <div
+            key={video._id}
+            className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-xl shadow-lg p-4 transform transition hover:-translate-y-1 hover:scale-105 duration-300 cursor-pointer"
+            onClick={() => openModal(video)}
+          >
+            <div className="relative pb-[56.25%] rounded overflow-hidden shadow-inner">
+              {video.video_url?.includes("youtube.com") ? (
+                <iframe
+                  src={video.video_url.replace("watch?v=", "embed/")}
+                  className="absolute top-0 left-0 w-full h-full rounded"
+                  allowFullScreen
+                  title={video.title}
+                />
+              ) : (
+                <video
+                  src={video.video_url}
+                  controls
+                  className="absolute top-0 left-0 w-full h-full object-cover rounded"
+                />
+              )}
             </div>
-          )}
-        </>
+            <div className="mt-4 space-y-1">
+              <h2 className="text-lg font-bold truncate">{video.title}</h2>
+              <p className="text-sm opacity-90 line-clamp-2">{video.description}</p>
+              <div className="flex justify-between text-xs mt-2">
+                <span className="bg-white text-indigo-600 px-2 py-1 rounded-md">
+                  {video.genre || "N/A"}
+                </span>
+                <span className="bg-white text-purple-600 px-2 py-1 rounded-md">
+                  {video.level || "N/A"}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Load More Button */}
+      {visibleCount < filtered.length && (
+        <div className="flex justify-center mt-8">
+          <button
+            onClick={handleLoadMore}
+            className="px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 shadow-md"
+          >
+            Load More
+          </button>
+        </div>
       )}
 
       {/* Video Modal */}

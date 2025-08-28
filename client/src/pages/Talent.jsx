@@ -135,7 +135,7 @@ const Talent = () => {
                     className="absolute top-0 left-0 w-full h-full"
                     src={
                       video.video_url.includes("watch?v=")
-                        ? video.video_url.replace("watch?v=", "embed/")
+                        ? video.video_url.replace("watch?v=", "embed/") 
                         : video.video_url.replace("youtu.be/", "youtube.com/embed/")
                     }
                     frameBorder="0"

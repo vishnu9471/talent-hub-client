@@ -45,7 +45,7 @@ const VideoCategoryPage = () => {
             const youtubeID = extractYouTubeID(video.video_url);
             return (
               <div
-                key={video.id}
+                key={video._id}
                 className="bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden transform transition duration-300 hover:scale-105"
               >
                 <div className="aspect-video">

@@ -1,39 +1,12 @@
 import Video from "../models/Video.js";
-import { v2 as cloudinary } from "cloudinary";
 
-export const uploadVideoToCloudinary = async (req, res) => {
-  try {
-    const user_id = req.user.id;
-    const { title, description, category, genre, level } = req.body;
-
-    if (!req.file || !title || !category || !genre || !level) {
-      return res.status(400).json({ error: "All fields and video file are required." });
-    }
-
-    const videoData = new Video({
-      user_id,
-      title,
-      description,
-      category: category.toLowerCase(),
-      genre,
-      level,
-      video_url: req.file.path,
-      isLearnVideo: false 
-    });
-
-    await videoData.save();
-    res.status(201).json({ message: "Video uploaded successfully", video_url: req.file.path });
-  } catch (err) {
-    console.error(" Upload error:", err);
-    res.status(500).json({ error: `Failed to upload video: ${err.message}` });
-  }
-};
-
+// Upload YouTube video (direct URL-based upload)
 export const uploadYouTubeVideo = async (req, res) => {
   try {
     const user_id = req.user.id;
     const { title, description, category, genre, level, video_url } = req.body;
 
+    // Ensure the required fields are provided
     if (!title || !video_url || !category || !genre || !level) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -42,51 +15,53 @@ export const uploadYouTubeVideo = async (req, res) => {
       user_id,
       title,
       description,
-      category: category.toLowerCase(),
+      category: category.toLowerCase(), // Convert to lowercase for consistency
       genre,
       level,
       video_url,
-      isLearnVideo: false 
+      isPublic: true, // Assuming public by default
     });
 
     await video.save();
-    res.status(201).json({ message: "YouTube video saved successfully" });
+    res.status(201).json({ message: "YouTube video uploaded successfully" });
   } catch (err) {
-    console.error(" Upload error:", err);
+    console.error("Upload error:", err);
     res.status(500).json({ error: `Failed to upload YouTube video: ${err.message}` });
   }
 };
 
-
+// Get all videos (no filtering by file type anymore)
 export const getAllVideos = async (req, res) => {
   try {
-    const videos = await Video.find()
-      .populate("user_id", "name")
-      .sort({ createdAt: -1 });
+    const videos = await Video.find({ isPublic: true }) // Only public videos
+      .populate("user_id", "name") // Get user name
+      .sort({ createdAt: -1 }); // Sort by latest
     res.status(200).json(videos);
   } catch (err) {
-    console.error(" Error fetching videos:", err);
+    console.error("Error fetching videos:", err);
     res.status(500).json({ error: `Failed to fetch videos: ${err.message}` });
   }
 };
 
+// Get videos uploaded by the current user
 export const getMyVideos = async (req, res) => {
   try {
-    const videos = await Video.find({ user_id: req.user.id })
-      .populate("user_id", "name")
+    const videos = await Video.find({ user_id: req.user.id }) // Fetch user's videos
+      .populate("user_id", "name") // Include user name
       .sort({ createdAt: -1 });
     res.status(200).json(videos);
   } catch (err) {
-    console.error(" Error fetching user videos:", err);
+    console.error("Error fetching user videos:", err);
     res.status(500).json({ error: `Failed to fetch user videos: ${err.message}` });
   }
 };
 
+// Delete a video
 export const deleteVideo = async (req, res) => {
   try {
     const result = await Video.findOneAndDelete({
       _id: req.params.id,
-      user_id: req.user.id,
+      user_id: req.user.id, // Ensure the video belongs to the user
     });
 
     if (!result) {
@@ -95,46 +70,48 @@ export const deleteVideo = async (req, res) => {
 
     res.status(200).json({ message: "Video deleted successfully" });
   } catch (err) {
-    console.error(" Delete error:", err);
+    console.error("Delete error:", err);
     res.status(500).json({ error: `Failed to delete video: ${err.message}` });
   }
 };
 
+// Get videos based on filters (category, genre, level)
 export const getFilteredVideos = async (req, res) => {
   try {
-    const { category, genre, level } = req.query;
-    const filters = {};
+    const { category = "All", genre = "All", level = "All" } = req.query; // Default values
 
+    const filters = {};
     if (category && category !== "All") filters.category = category.toLowerCase();
     if (genre && genre !== "All") filters.genre = genre;
     if (level && level !== "All") filters.level = level;
 
     const videos = await Video.find(filters)
-      .populate("user_id", "name")
-      .sort({ createdAt: -1 });
+      .populate("user_id", "name") // Include the author's name
+      .sort({ createdAt: -1 }); // Sort by latest
 
     res.status(200).json(videos);
   } catch (err) {
-    console.error("❌ Filter error:", err);
+    console.error("Filter error:", err);
     res.status(500).json({ error: `Failed to fetch filtered videos: ${err.message}` });
   }
 };
 
+// Get videos by category
 export const getVideosByCategory = async (req, res) => {
   try {
     const { category } = req.params;
     const videos = await Video.aggregate([
-      { $match: { category: category.toLowerCase() } },
-      { $sample: { size: 100 } },
+      { $match: { category: category.toLowerCase(), isPublic: true } }, // Only public videos
+      { $sample: { size: 100 } }, // Randomly select up to 100 videos (for example)
       {
         $lookup: {
-          from: "users",
+          from: "users", // Lookup user info from the 'users' collection
           localField: "user_id",
           foreignField: "_id",
           as: "authorInfo",
         },
       },
-      { $unwind: "$authorInfo" },
+      { $unwind: "$authorInfo" }, // Flatten the user data
       {
         $project: {
           title: 1,
@@ -144,14 +121,14 @@ export const getVideosByCategory = async (req, res) => {
           level: 1,
           video_url: 1,
           createdAt: 1,
-          author: "$authorInfo.name",
+          author: "$authorInfo.name", // Include author's name
         },
       },
     ]);
 
     res.status(200).json(videos);
   } catch (err) {
-    console.error("❌ DB error:", err);
+    console.error("DB error:", err);
     res.status(500).json({ error: `Failed to fetch videos by category: ${err.message}` });
   }
 };

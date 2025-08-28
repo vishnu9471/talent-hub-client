@@ -28,18 +28,18 @@ export default function Upload() {
 
   // Handle form submission
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage(""); // Clear previous messages
-    try {
-      // Make a POST request to upload the video
-      await axios.post("/videos/upload", form);
-      setMessage("✅ Video uploaded successfully!");
-      setTimeout(() => navigate("/talent"), 1500); // Redirect to /talent after success
-    } catch (err) {
-      console.error(err);
-      setMessage("❌ Failed to upload video. Please try again.");
-    }
-  };
+  e.preventDefault();
+  setMessage(""); // Clear previous messages
+  try {
+    // POST request to save YouTube/S3 link
+    await axios.post("/videos/youtube", form);
+    setMessage("✅ Video uploaded successfully!");
+    setTimeout(() => navigate("/talent"), 1500); // Redirect after success
+  } catch (err) {
+    console.error(err);
+    setMessage("❌ Failed to upload video. Please try again.");
+  }
+};
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-12">

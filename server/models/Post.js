@@ -8,6 +8,7 @@ const postSchema = new mongoose.Schema({
   genre: { type: String, required: true },
   level: { type: String, required: true },
   video_url: { type: String, required: true },
-}, { timestamps: true });
+},
+ { timestamps: true });
 
 export default mongoose.model("Post", postSchema);

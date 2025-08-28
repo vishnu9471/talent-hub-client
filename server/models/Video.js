@@ -12,7 +12,6 @@ const videoSchema = new mongoose.Schema(
     thumbnail_url: {type: String },
     views: { type: Number,default: 0},
     isPublic: { type: Boolean,default: true},
-    
   },
   { timestamps: true }
 );

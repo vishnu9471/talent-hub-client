@@ -10,7 +10,6 @@ import PasswordReset from "../models/PasswordReset.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// Register
 export const register = async (req, res) => {
   const { name, lastname, email, password } = req.body;
   if (!name || !lastname || !email || !password) {
@@ -47,7 +46,6 @@ export const register = async (req, res) => {
   }
 };
 
-// Login
 export const login = async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password)
@@ -75,7 +73,6 @@ export const login = async (req, res) => {
   }
 };
 
-// Forgot Password
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: "Email is required" });
@@ -113,7 +110,6 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
-// Verify OTP
 export const verifyOTP = async (req, res) => {
   const { email, otp } = req.body;
   if (!email || !otp)
@@ -139,7 +135,6 @@ export const verifyOTP = async (req, res) => {
   }
 };
 
-// Reset Password
 export const resetPassword = async (req, res) => {
   const { email, newPassword } = req.body;
   if (!email || !newPassword)

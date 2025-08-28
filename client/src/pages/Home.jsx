@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Upload } from "lucide-react";
-import CardGrid from "../components/CardGrid";
+import CardGrid from "../components/CardGrid" ;
 
 
 const Home = () => {

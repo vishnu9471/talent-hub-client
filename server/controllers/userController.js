@@ -1,6 +1,5 @@
 import User from "../models/User.js";
 
-// ✅ Named export for ESM
 export const getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");

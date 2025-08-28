@@ -36,7 +36,7 @@ export default function Upload() {
       setTimeout(() => navigate("/learn"), 1500);
     } catch (err) {
       console.error(err);
-      setMessage("❌ Failed to upload video. Please try again.");
+      setMessage(" Failed to upload video. Please try again.");
     }
   };
 
@@ -70,12 +70,12 @@ export default function Upload() {
             className="w-full px-4 py-2 rounded-lg border bg-white/20 dark:bg-gray-900 text-white placeholder-gray-300"
           />
 
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col md:flex-row gap-4 text-black">
             <select
               name="category"
               value={form.category}
               onChange={handleChange}
-              className="flex-1 px-4 py-2 rounded-lg border bg-white/20 dark:bg-gray-900 text-white"
+              className="flex-1 px-4 py-2 rounded-lg border bg-white/20 dark:bg-gray-900 text-black"
               required
             >
               {categories.map((c) => (
@@ -89,7 +89,7 @@ export default function Upload() {
               name="genre"
               value={form.genre}
               onChange={handleChange}
-              className="flex-1 px-4 py-2 rounded-lg border bg-white/20 dark:bg-gray-900 text-white"
+              className="flex-1 px-4 py-2 rounded-lg border bg-white dark:bg-gray-900 text-"
               required
             >
               {genres.map((g) => (
@@ -103,7 +103,7 @@ export default function Upload() {
               name="level"
               value={form.level}
               onChange={handleChange}
-              className="flex-1 px-4 py-2 rounded-lg border bg-white/20 dark:bg-gray-900 text-white"
+              className="flex-1 px-4 py-2 rounded-lg border bg-white/20 dark:bg-white-900 text-black"
               required
             >
               {levels.map((l) => (

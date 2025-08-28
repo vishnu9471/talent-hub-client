@@ -1,7 +1,6 @@
 import Video from "../models/Video.js";
 import { v2 as cloudinary } from "cloudinary";
 
-// 📤 Upload via file (Cloudinary)
 export const uploadVideoToCloudinary = async (req, res) => {
   try {
     const user_id = req.user.id;
@@ -30,7 +29,6 @@ export const uploadVideoToCloudinary = async (req, res) => {
   }
 };
 
-// 📤 Upload via YouTube URL
 export const uploadYouTubeVideo = async (req, res) => {
   try {
     const user_id = req.user.id;
@@ -72,7 +70,6 @@ export const getAllVideos = async (req, res) => {
   }
 };
 
-// 👤 Get videos by logged-in user
 export const getMyVideos = async (req, res) => {
   try {
     const videos = await Video.find({ user_id: req.user.id })
@@ -85,7 +82,6 @@ export const getMyVideos = async (req, res) => {
   }
 };
 
-// ❌ Delete a video
 export const deleteVideo = async (req, res) => {
   try {
     const result = await Video.findOneAndDelete({
@@ -99,12 +95,11 @@ export const deleteVideo = async (req, res) => {
 
     res.status(200).json({ message: "Video deleted successfully" });
   } catch (err) {
-    console.error("❌ Delete error:", err);
+    console.error(" Delete error:", err);
     res.status(500).json({ error: `Failed to delete video: ${err.message}` });
   }
 };
 
-// 🔍 Filter videos
 export const getFilteredVideos = async (req, res) => {
   try {
     const { category, genre, level } = req.query;
@@ -125,7 +120,6 @@ export const getFilteredVideos = async (req, res) => {
   }
 };
 
-// 📂 Get videos by category (limit 100 random)
 export const getVideosByCategory = async (req, res) => {
   try {
     const { category } = req.params;

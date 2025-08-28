@@ -1,6 +1,5 @@
 import Post from "../models/Post.js";
 
-// Create a post
 export const createPost = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -27,14 +26,13 @@ export const createPost = async (req, res) => {
   }
 };
 
-// Get all posts by logged-in user
 export const getPosts = async (req, res) => {
   try {
     const userId = req.user.id;
 
     const posts = await Post.find({ user: userId })
       .sort({ createdAt: -1 })
-      .populate("user", "name email"); // Optional: populate user details
+      .populate("user", "name email"); 
 
     res.json(posts);
   } catch (err) {
@@ -43,7 +41,6 @@ export const getPosts = async (req, res) => {
   }
 };
 
-// Delete a post by ID
 export const deletePost = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -62,12 +59,11 @@ export const deletePost = async (req, res) => {
   }
 };
 
-// Get all videos
 export const getAllVideos = async (req, res) => {
   try {
     const videos = await Post.find()
       .sort({ createdAt: -1 })
-      .populate("user", "name email"); // Optional: show author details
+      .populate("user", "name email"); 
 
     res.json(videos);
   } catch (err) {

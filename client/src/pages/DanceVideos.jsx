@@ -12,7 +12,7 @@ const DanceVideos = () => {
         console.log("✅ Response from backend:", res.data);
         setVideos(res.data);
       } catch (err) {
-        console.error("❌ Error fetching dance videos:", err);
+        console.error(" Error fetching dance videos:", err);
       } finally {
         setLoading(false);
       }

@@ -1,6 +1,5 @@
 import Playlist from "../models/Playlist.js";// Mongoose model
 
-// Create Playlist
 export const createPlaylist  = async (req, res) => {
   try {
     const playlist = new Playlist(req.body);
@@ -15,7 +14,6 @@ export const createPlaylist  = async (req, res) => {
   }
 };
 
-// Get All Playlists
 export const getAllPlaylists = async (req, res) => {
   try {
     const playlists = await Playlist.find();
@@ -26,7 +24,6 @@ export const getAllPlaylists = async (req, res) => {
   }
 };
 
-// Get Playlist by ID
 export const getPlaylistById = async (req, res) => {
   try {
     const playlist = await Playlist.findById(req.params.id);
@@ -40,13 +37,12 @@ export const getPlaylistById = async (req, res) => {
   }
 };
 
-// Update Playlist
 export const updatePlaylist = async (req, res) => {
   try {
     const playlist = await Playlist.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true } // return updated document
+      { new: true }
     );
     if (!playlist) {
       return res.status(404).json({ error: "Playlist not found" });
@@ -58,7 +54,6 @@ export const updatePlaylist = async (req, res) => {
   }
 };
 
-// Delete Playlist
 export const deletePlaylist = async (req, res) => {
   try {
     const playlist = await Playlist.findByIdAndDelete(req.params.id);

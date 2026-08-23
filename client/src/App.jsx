@@ -73,14 +73,12 @@ import Profile from "./pages/Profile";
 import Talent from "./pages/Talent";
 import VideoCategoryPage from "./pages/VideoCategoryPage";
 import PlaylistPage from "./pages/PlaylistPage";
-
 import ForgotPassword from "./components/ForgotPassword";
 import VerifiedPage from "./pages/VerifiedPage";
 
 function App() {
   return (
     <div className="relative min-h-screen w-full font-poppins">
-      
       {/* ================================
           NAVBAR
       ================================= */}

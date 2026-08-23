@@ -2,23 +2,30 @@ import express from "express";
 import * as postController from "../controllers/postController.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 
-
 const router = express.Router();
 
-// Create a post
-router.post('/', verifyToken, postController.createPost);
+// ============================================
+// CREATE VIDEO POST
+// POST /api/posts
+// ============================================
+router.post("/", verifyToken, postController.createPost);
 
-// Get posts by logged-in user
-router.get('/', verifyToken, postController. getPosts);
+// ============================================
+// GET LOGGED-IN USER'S POSTS
+// GET /api/posts
+// ============================================
+router.get("/", verifyToken, postController.getPosts);
 
-// Get all videos (public or protected — your choice)
-router.get('/videos', postController.getAllVideos);
+// ============================================
+// GET ALL VIDEOS
+// GET /api/posts/videos
+// ============================================
+router.get("/videos", postController.getAllVideos);
 
-
-
-
-// Delete a post
-router.delete('/:id', verifyToken, postController.deletePost);
+// ============================================
+// DELETE USER POST
+// DELETE /api/posts/:id
+// ============================================
+router.delete("/:id", verifyToken, postController.deletePost);
 
 export default router;
-

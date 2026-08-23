@@ -1,27 +1,60 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
 export const verifyToken = (req, res, next) => {
-  const authHeader = req.headers.authorization;
+  try {
+    const JWT_SECRET = process.env.JWT_SECRET;
 
-  if (!authHeader?.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Access denied. No token provided." });
-  }
-
-  const token = authHeader.split(" ")[1];
-
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({
-        error:
-          err.name === "TokenExpiredError"
-            ? "Token expired. Please log in again."
-            : "Invalid token."
+    if (!JWT_SECRET) {
+      console.error("❌ JWT_SECRET is missing");
+      return res.status(500).json({
+        error: "Server configuration error: JWT_SECRET is missing.",
       });
     }
 
-    req.user = { id: decoded.id, email: decoded.email }; 
+    const authHeader = req.headers.authorization;
+
+    console.log(
+      "🔐 Authorization header:",
+      authHeader ? "Present" : "Missing"
+    );
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.log("❌ No Bearer token provided");
+
+      return res.status(401).json({
+        error: "Access denied. No token provided.",
+      });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({
+        error: "Access denied. Invalid token.",
+      });
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    console.log("✅ JWT verified for user:", decoded.id);
+
+    req.user = {
+      id: decoded.id,
+      email: decoded.email,
+    };
+
     next();
-  });
+  } catch (error) {
+    console.error("❌ JWT verification error:", error.message);
+
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        error: "Token expired. Please log in again.",
+      });
+    }
+
+    return res.status(401).json({
+      error: "Invalid token.",
+    });
+  }
 };

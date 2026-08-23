@@ -58,12 +58,7 @@
 // export default App;
 
 import React from "react";
-
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-} from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -78,143 +73,145 @@ import Profile from "./pages/Profile";
 import Talent from "./pages/Talent";
 import VideoCategoryPage from "./pages/VideoCategoryPage";
 import PlaylistPage from "./pages/PlaylistPage";
+
 import ForgotPassword from "./components/ForgotPassword";
 import VerifiedPage from "./pages/VerifiedPage";
 
 function App() {
   return (
-    <Router>
+    <div className="relative min-h-screen w-full font-poppins">
+      
+      {/* ================================
+          NAVBAR
+      ================================= */}
+      <Navbar />
 
-      <div className="relative min-h-screen w-full font-poppins">
+      {/* ================================
+          PAGE CONTENT
+      ================================= */}
+      <main className="pt-20 px-4 sm:px-6">
+        <Routes>
 
-        {/* ==================================================
-            NAVBAR
-        ================================================== */}
+          {/* ================================
+              PUBLIC ROUTES
+          ================================= */}
 
-        <Navbar />
+          <Route
+            path="/"
+            element={<Home />}
+          />
 
-        {/* ==================================================
-            PAGE CONTENT
-        ================================================== */}
+          <Route
+            path="/login"
+            element={<Login />}
+          />
 
-        <main className="pt-20 px-4 sm:px-6">
+          <Route
+            path="/register"
+            element={<Register />}
+          />
 
-          <Routes>
+          <Route
+            path="/forgot-password"
+            element={<ForgotPassword />}
+          />
 
-            {/* ==================================================
-                PUBLIC ROUTES
-            ================================================== */}
+          <Route
+            path="/verified"
+            element={<VerifiedPage />}
+          />
 
-            <Route path="/" element={<Home />} />
+          {/* ================================
+              PROTECTED ROUTES
+          ================================= */}
 
-            <Route
-              path="/login"
-              element={<Login />}
-            />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
 
-            <Route
-              path="/register"
-              element={<Register />}
-            />
+          <Route
+            path="/learn"
+            element={
+              <ProtectedRoute>
+                <Learn />
+              </ProtectedRoute>
+            }
+          />
 
-            <Route
-              path="/forgot-password"
-              element={<ForgotPassword />}
-            />
+          <Route
+            path="/upload"
+            element={
+              <ProtectedRoute>
+                <Upload />
+              </ProtectedRoute>
+            }
+          />
 
-            <Route
-              path="/verified"
-              element={<VerifiedPage />}
-            />
+          <Route
+            path="/talent"
+            element={
+              <ProtectedRoute>
+                <Talent />
+              </ProtectedRoute>
+            }
+          />
 
-            {/* ==================================================
-                PROTECTED ROUTES
-            ================================================== */}
+          <Route
+            path="/profile/:id"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
 
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
+          <Route
+            path="/playlist"
+            element={
+              <ProtectedRoute>
+                <PlaylistPage />
+              </ProtectedRoute>
+            }
+          />
 
-            <Route
-              path="/learn"
-              element={
-                <ProtectedRoute>
-                  <Learn />
-                </ProtectedRoute>
-              }
-            />
+          <Route
+            path="/videos/:category"
+            element={
+              <ProtectedRoute>
+                <VideoCategoryPage />
+              </ProtectedRoute>
+            }
+          />
 
-            <Route
-              path="/upload"
-              element={
-                <ProtectedRoute>
-                  <Upload />
-                </ProtectedRoute>
-              }
-            />
+          {/* ================================
+              404 PAGE
+          ================================= */}
 
-            <Route
-              path="/talent"
-              element={
-                <ProtectedRoute>
-                  <Talent />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/profile/:id"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/playlist"
-              element={
-                <ProtectedRoute>
-                  <PlaylistPage />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/videos/:category"
-              element={
-                <ProtectedRoute>
-                  <VideoCategoryPage />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* ==================================================
-                404
-            ================================================== */}
-
-            <Route
-              path="*"
-              element={
-                <div className="min-h-[70vh] flex items-center justify-center">
-                  <h1 className="text-2xl font-bold text-gray-700">
-                    404 - Page Not Found
+          <Route
+            path="*"
+            element={
+              <div className="min-h-[70vh] flex items-center justify-center">
+                <div className="text-center">
+                  <h1 className="text-4xl font-bold text-gray-700">
+                    404
                   </h1>
+
+                  <p className="mt-2 text-lg text-gray-500">
+                    Page Not Found
+                  </p>
                 </div>
-              }
-            />
+              </div>
+            }
+          />
 
-          </Routes>
-
-        </main>
-      </div>
-
-    </Router>
+        </Routes>
+      </main>
+    </div>
   );
 }
 

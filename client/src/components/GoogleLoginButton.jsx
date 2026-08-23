@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { GoogleLogin } from "@react-oauth/google";
-import api from "../api";
+import api from "../services/api";
 
 const GoogleLoginButton = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
@@ -22,6 +22,8 @@ const GoogleLoginButton = ({ onSuccess }) => {
 
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(user));
+
+        window.dispatchEvent(new Event("authChanged"));
 
         if (onSuccess) {
           onSuccess(user);
@@ -60,7 +62,7 @@ const GoogleLoginButton = ({ onSuccess }) => {
           size="large"
           text="continue_with"
           shape="rectangular"
-          width="100%"
+          width="350"
         />
       )}
     </div>

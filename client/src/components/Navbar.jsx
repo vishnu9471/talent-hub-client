@@ -270,7 +270,7 @@ const Navbar = () => {
         ================================================== */}
 
         {mobileMenu && (
-          <div className="md:hidden bg-[#dbeafe] border-t border-blue-200 shadow-lg">
+          <div className="md:hidden bg-[#000000] border-t border-blue-200 shadow-lg">
             <div className="px-4 py-4 space-y-2">
 
               {/* HOME */}

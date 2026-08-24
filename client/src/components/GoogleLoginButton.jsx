@@ -1,17 +1,17 @@
 import React, { useState } from "react";
 import { GoogleLogin } from "@react-oauth/google";
-import api from "../api";
+import api from "../services/api";
 
 const GoogleLoginButton = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
+      setLoading(true);
+
       if (!credentialResponse?.credential) {
         throw new Error("Google credential was not received.");
       }
-
-      setLoading(true);
 
       console.log("✅ Google credential received");
       console.log("📤 Sending Google credential to backend...");
@@ -33,21 +33,28 @@ const GoogleLoginButton = ({ onSuccess }) => {
       const { token, user } = response.data;
 
       if (!token) {
-        throw new Error("Backend did not return an authentication token.");
+        throw new Error(
+          "Backend did not return an authentication token."
+        );
       }
 
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
+      window.dispatchEvent(new Event("authChanged"));
+
       console.log("✅ Google authentication successful");
-      console.log("🔐 Token saved:", !!localStorage.getItem("token"));
+      console.log(
+        "🔐 Token saved:",
+        !!localStorage.getItem("token")
+      );
       console.log("👤 User:", user);
 
       if (onSuccess) {
         onSuccess(user);
       }
     } catch (error) {
-      console.error("🔥 Google registration/login error:", error);
+      console.error("🔥 Google authentication error:", error);
 
       const message =
         error?.response?.data?.error ||
@@ -81,25 +88,20 @@ const GoogleLoginButton = ({ onSuccess }) => {
   }
 
   return (
-    <div className="w-full flex justify-center">
-      <div
-        className="w-full flex justify-center"
-        style={{
-          minHeight: "44px",
-        }}
-      >
-        <GoogleLogin
-          onSuccess={handleGoogleSuccess}
-          onError={handleGoogleError}
-          useOneTap={false}
-          theme="outline"
-          size="large"
-          text="continue_with"
-          shape="rectangular"
-          logo_alignment="left"
-          width="350"
-        />
-      </div>
+    <div
+      className="w-full flex justify-center"
+      style={{ minHeight: "44px" }}
+    >
+      <GoogleLogin
+        onSuccess={handleGoogleSuccess}
+        onError={handleGoogleError}
+        theme="outline"
+        size="large"
+        text="continue_with"
+        shape="rectangular"
+        logo_alignment="left"
+        width="350"
+      />
     </div>
   );
 };

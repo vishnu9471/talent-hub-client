@@ -366,13 +366,15 @@ const allowedOrigins = [
 
 // Allow Vercel preview deployments
 const isVercelOrigin = (origin) => {
+  if (!origin) return false;
+
   return /^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/.test(origin);
 };
 
 const corsOptions = {
   origin: (origin, callback) => {
     // Requests without Origin
-    // e.g. Postman, curl, server-to-server
+    // Example: Postman, curl, server-to-server
     if (!origin) {
       return callback(null, true);
     }
@@ -413,10 +415,11 @@ const corsOptions = {
   optionsSuccessStatus: 204,
 };
 
-app.use(cors(corsOptions));
+// IMPORTANT:
+// Do NOT use app.options("*", ...)
+// It causes path-to-regexp errors with newer Express versions.
 
-// Explicitly handle OPTIONS requests
-app.options("*", cors(corsOptions));
+app.use(cors(corsOptions));
 
 // ======================================================
 // BODY PARSERS
@@ -468,14 +471,19 @@ app.use((req, res, next) => {
 // ROUTES
 // ======================================================
 
+// Authentication
 app.use("/api/auth", authRoutes);
 
+// Videos
 app.use("/api/videos", videoRoutes);
 
+// Users
 app.use("/api/users", userRoutes);
 
+// Posts
 app.use("/api/posts", postRoutes);
 
+// Playlists
 app.use("/api/playlists", playlistRoutes);
 
 // ======================================================
@@ -526,11 +534,13 @@ app.use((err, req, res, next) => {
   console.error("======================================");
   console.error("🔥 GLOBAL SERVER ERROR");
   console.error("======================================");
-
   console.error("Message:", err.message);
 
   // CORS error
-  if (err.message.startsWith("CORS blocked origin:")) {
+  if (
+    err.message &&
+    err.message.startsWith("CORS blocked origin:")
+  ) {
     return res.status(403).json({
       success: false,
       error: "CORS policy does not allow this origin.",
@@ -540,7 +550,6 @@ app.use((err, req, res, next) => {
   return res.status(500).json({
     success: false,
     error: "Server error",
-
     details:
       process.env.NODE_ENV === "production"
         ? undefined
@@ -571,7 +580,7 @@ const startServer = async () => {
       );
 
       console.log(
-        `❤️ Health: /api/health`
+        "❤️ Health: /api/health"
       );
 
       console.log("======================================");
@@ -587,3 +596,4 @@ const startServer = async () => {
 };
 
 startServer();
+

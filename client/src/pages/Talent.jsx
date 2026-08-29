@@ -765,16 +765,65 @@ const Talent = () => {
       url.includes("res.cloudinary.com") &&
       url.includes("/video/upload/")
     ) {
-      // Convert video to widely supported format:
-      // MP4 + H.264 video + AAC audio
+      // Don't add transformation twice
+      if (
+        url.includes("f_mp4") ||
+        url.includes("vc_h264") ||
+        url.includes("ac_aac")
+      ) {
+        return url;
+      }
+
       return url.replace(
         "/video/upload/",
         "/video/upload/f_mp4,vc_h264,ac_aac/"
       );
     }
 
-    // YouTube or other video URLs
     return url;
+  };
+
+  // ============================================
+  // YOUTUBE URL CONVERTER
+  // ============================================
+
+  const getYouTubeEmbedUrl = (url) => {
+    if (!url) return null;
+
+    try {
+      const parsedUrl = new URL(url);
+
+      // youtube.com/watch?v=VIDEO_ID
+      if (
+        parsedUrl.hostname.includes("youtube.com") &&
+        parsedUrl.searchParams.get("v")
+      ) {
+        const videoId = parsedUrl.searchParams.get("v");
+
+        return `https://www.youtube.com/embed/${videoId}`;
+      }
+
+      // youtu.be/VIDEO_ID
+      if (parsedUrl.hostname === "youtu.be") {
+        const videoId = parsedUrl.pathname.substring(1);
+
+        if (videoId) {
+          return `https://www.youtube.com/embed/${videoId}`;
+        }
+      }
+
+      // Already embed URL
+      if (
+        parsedUrl.hostname.includes("youtube.com") &&
+        parsedUrl.pathname.startsWith("/embed/")
+      ) {
+        return url;
+      }
+
+      return null;
+    } catch (error) {
+      return null;
+    }
   };
 
   // ============================================
@@ -798,7 +847,7 @@ const Talent = () => {
         } else if (Array.isArray(res.data?.videos)) {
           setVideos(res.data.videos);
         } else {
-          console.error("❌ Unexpected response:", res.data);
+          console.error("Unexpected response:", res.data);
 
           setVideos([]);
           setError("Unexpected response from server.");
@@ -895,79 +944,19 @@ const Talent = () => {
   };
 
   // ============================================
-  // YOUTUBE URL CONVERTER
-  // ============================================
-
-  const getYouTubeEmbedUrl = (url) => {
-    if (!url) return null;
-
-    try {
-      const parsedUrl = new URL(url);
-
-      // youtube.com/watch?v=VIDEO_ID
-      if (
-        parsedUrl.hostname.includes("youtube.com") &&
-        parsedUrl.searchParams.get("v")
-      ) {
-        const videoId =
-          parsedUrl.searchParams.get("v");
-
-        return `https://www.youtube.com/embed/${videoId}`;
-      }
-
-      // youtu.be/VIDEO_ID
-      if (parsedUrl.hostname === "youtu.be") {
-        const videoId =
-          parsedUrl.pathname.substring(1);
-
-        if (videoId) {
-          return `https://www.youtube.com/embed/${videoId}`;
-        }
-      }
-
-      // Already embed URL
-      if (
-        parsedUrl.hostname.includes("youtube.com") &&
-        parsedUrl.pathname.startsWith("/embed/")
-      ) {
-        return url;
-      }
-
-      return null;
-    } catch (error) {
-      return null;
-    }
-  };
-
-  // ============================================
   // VIDEO ERROR HANDLER
   // ============================================
 
-  const handleVideoError = (e, originalUrl) => {
+  const handleVideoError = (e, video) => {
     console.error(
-      "❌ Video failed to load:",
-      originalUrl
+      "❌ Video playback error:",
+      video?.video_url
     );
 
     console.error(
-      "Video error:",
+      "Video element error:",
       e.currentTarget.error
     );
-
-    // If transformed Cloudinary URL fails,
-    // try original URL once.
-    if (
-      e.currentTarget.dataset.fallback !== "true" &&
-      originalUrl
-    ) {
-      console.log(
-        "🔄 Trying original video URL..."
-      );
-
-      e.currentTarget.dataset.fallback = "true";
-      e.currentTarget.src = originalUrl;
-      e.currentTarget.load();
-    }
   };
 
   // ============================================
@@ -993,22 +982,20 @@ const Talent = () => {
   // ============================================
 
   return (
-    <div className="min-h-screen px-6 py-10 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <div className="min-h-screen px-4 sm:px-6 py-10 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
 
       {/* ========================================
           HEADER
       ======================================== */}
 
       <div className="max-w-7xl mx-auto mb-10 text-center">
-
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-3">
+        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-3">
           🎭 Talent Gallery
         </h1>
 
         <p className="text-gray-600 dark:text-gray-400">
           Discover amazing performances from our talented creators.
         </p>
-
       </div>
 
       {/* ========================================
@@ -1026,8 +1013,7 @@ const Talent = () => {
       ======================================== */}
 
       <div className="max-w-7xl mx-auto mb-10">
-
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-5">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-4 sm:p-5">
 
           <div className="flex flex-col lg:flex-row gap-4">
 
@@ -1037,10 +1023,8 @@ const Talent = () => {
               type="text"
               placeholder="🔍 Search by title or description..."
               value={search}
-              onChange={(e) =>
-                setSearch(e.target.value)
-              }
-              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-black dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 min-w-0 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-black dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
             />
 
             {/* CATEGORY */}
@@ -1049,7 +1033,7 @@ const Talent = () => {
               name="category"
               value={filters.category}
               onChange={handleFilterChange}
-              className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-black dark:text-white outline-none"
+              className="w-full lg:w-auto px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-black dark:text-white outline-none"
             >
               {categories.map((category) => (
                 <option
@@ -1070,7 +1054,7 @@ const Talent = () => {
               name="genre"
               value={filters.genre}
               onChange={handleFilterChange}
-              className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-black dark:text-white outline-none"
+              className="w-full lg:w-auto px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-black dark:text-white outline-none"
             >
               {genres.map((genre) => (
                 <option
@@ -1090,7 +1074,7 @@ const Talent = () => {
               name="level"
               value={filters.level}
               onChange={handleFilterChange}
-              className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-black dark:text-white outline-none"
+              className="w-full lg:w-auto px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-black dark:text-white outline-none"
             >
               {levels.map((level) => (
                 <option
@@ -1105,9 +1089,7 @@ const Talent = () => {
             </select>
 
           </div>
-
         </div>
-
       </div>
 
       {/* ========================================
@@ -1115,21 +1097,15 @@ const Talent = () => {
       ======================================== */}
 
       <div className="max-w-7xl mx-auto mb-5">
-
         <p className="text-gray-600 dark:text-gray-400">
-
           Showing{" "}
-
           <span className="font-semibold text-indigo-600 dark:text-indigo-400">
             {filteredVideos.length}
           </span>{" "}
-
           {filteredVideos.length === 1
             ? "video"
             : "videos"}
-
         </p>
-
       </div>
 
       {/* ========================================
@@ -1137,9 +1113,7 @@ const Talent = () => {
       ======================================== */}
 
       {filteredVideos.length === 0 ? (
-
         <div className="max-w-7xl mx-auto">
-
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md p-12 text-center">
 
             <div className="text-6xl mb-4">
@@ -1155,9 +1129,7 @@ const Talent = () => {
             </p>
 
           </div>
-
         </div>
-
       ) : (
 
         /* ========================================
@@ -1169,17 +1141,12 @@ const Talent = () => {
           {filteredVideos.map((video) => {
 
             const youtubeUrl =
-              getYouTubeEmbedUrl(
-                video.video_url
-              );
+              getYouTubeEmbedUrl(video.video_url);
 
             const playableVideoUrl =
-              getPlayableVideoUrl(
-                video.video_url
-              );
+              getPlayableVideoUrl(video.video_url);
 
             return (
-
               <div
                 key={video._id || video.id}
                 className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300"
@@ -1189,7 +1156,11 @@ const Talent = () => {
                     VIDEO
                 ================================== */}
 
-                <div className="relative aspect-video bg-black">
+                <div className="relative aspect-video bg-black overflow-hidden">
+
+                  {/* ================================
+                      YOUTUBE
+                  ================================= */}
 
                   {youtubeUrl ? (
 
@@ -1201,27 +1172,29 @@ const Talent = () => {
                         "Talent video"
                       }
                       frameBorder="0"
+                      loading="lazy"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                       allowFullScreen
                     />
 
                   ) : (
 
+                    /* ================================
+                       CLOUDINARY / NORMAL VIDEO
+                    ================================= */
+
                     <video
-                      key={playableVideoUrl}
                       src={playableVideoUrl}
                       controls
                       playsInline
                       preload="metadata"
                       className="absolute inset-0 w-full h-full object-cover bg-black"
                       onError={(e) =>
-                        handleVideoError(
-                          e,
-                          video.video_url
-                        )
+                        handleVideoError(e, video)
                       }
                     >
-                      Your browser does not support video playback.
+                      Your browser does not support
+                      HTML5 video.
                     </video>
 
                   )}
@@ -1292,12 +1265,10 @@ const Talent = () => {
                 </div>
 
               </div>
-
             );
           })}
 
         </div>
-
       )}
 
     </div>

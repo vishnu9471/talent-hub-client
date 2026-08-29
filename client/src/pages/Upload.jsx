@@ -219,7 +219,7 @@
 // }
 
 
-import React, { useState, useRef } from "react";
+import React, { useRef, useState } from "react";
 import axios from "../services/api";
 import { useNavigate } from "react-router-dom";
 
@@ -229,7 +229,6 @@ const levels = ["Beginner", "Intermediate", "Advanced"];
 
 export default function Upload() {
   const navigate = useNavigate();
-
   const fileInputRef = useRef(null);
 
   const [form, setForm] = useState({
@@ -251,10 +250,10 @@ export default function Upload() {
   // ==========================================
 
   const handleChange = (e) => {
-    setForm({
-      ...form,
+    setForm((previous) => ({
+      ...previous,
       [e.target.name]: e.target.value,
-    });
+    }));
   };
 
   // ==========================================
@@ -288,8 +287,22 @@ export default function Upload() {
       return;
     }
 
-    // Check video type
-    if (!file.type || !file.type.startsWith("video/")) {
+    // Some Android devices/browsers may return an empty MIME type.
+    // Check extension as a fallback.
+    const fileName = file.name.toLowerCase();
+
+    const validVideoExtension =
+      fileName.endsWith(".mp4") ||
+      fileName.endsWith(".webm") ||
+      fileName.endsWith(".mov") ||
+      fileName.endsWith(".m4v") ||
+      fileName.endsWith(".avi") ||
+      fileName.endsWith(".mkv");
+
+    const validVideoType =
+      file.type && file.type.startsWith("video/");
+
+    if (!validVideoType && !validVideoExtension) {
       setMessage("❌ Please select a valid video file.");
 
       if (fileInputRef.current) {
@@ -303,7 +316,7 @@ export default function Upload() {
     setMessage("");
     setVideoFile(file);
 
-    // Clear URL when selecting a file
+    // Clear manually entered URL
     setForm((previous) => ({
       ...previous,
       video_url: "",
@@ -311,42 +324,51 @@ export default function Upload() {
   };
 
   // ==========================================
-  // REMOVE SELECTED VIDEO
+  // REMOVE VIDEO
   // ==========================================
 
   const removeVideo = () => {
     setVideoFile(null);
+    setUploadProgress(0);
+    setMessage("");
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-
-    setUploadProgress(0);
   };
 
   // ==========================================
   // UPLOAD VIDEO TO CLOUDINARY
+  // IMPORTANT:
+  // DO NOT USE YOUR BACKEND AXIOS INSTANCE HERE.
   // ==========================================
 
   const uploadToCloudinary = async (file) => {
     const cloudName =
-      import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      import.meta.env.VITE_CLOUDINARY_CLOUD_NAME?.trim();
 
     const uploadPreset =
-      import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+      import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET?.trim();
+
+    console.log("☁️ Cloudinary configuration:", {
+      cloudName: cloudName ? "Loaded" : "Missing",
+      uploadPreset: uploadPreset ? "Loaded" : "Missing",
+    });
 
     if (!cloudName) {
       throw new Error(
-        "Cloudinary cloud name is missing. Add VITE_CLOUDINARY_CLOUD_NAME."
+        "Cloudinary cloud name is missing. Check Vercel environment variable VITE_CLOUDINARY_CLOUD_NAME."
       );
     }
 
     if (!uploadPreset) {
       throw new Error(
-        "Cloudinary upload preset is missing. Add VITE_CLOUDINARY_UPLOAD_PRESET."
+        "Cloudinary upload preset is missing. Check Vercel environment variable VITE_CLOUDINARY_UPLOAD_PRESET."
       );
     }
 
+    // IMPORTANT:
+    // Use Cloudinary's direct upload endpoint.
     const cloudinaryUrl =
       `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`;
 
@@ -356,52 +378,69 @@ export default function Upload() {
     data.append("upload_preset", uploadPreset);
     data.append("folder", "talent-hub/videos");
 
-    console.log("☁️ Uploading video to Cloudinary...");
+    console.log("☁️ Starting Cloudinary upload...");
     console.log("📁 File:", file.name);
-    console.log("📦 Type:", file.type);
+    console.log("📦 Type:", file.type || "unknown");
     console.log("📏 Size:", file.size);
 
-    const response = await axios.post(
-      cloudinaryUrl,
-      data,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+    /*
+     * IMPORTANT:
+     *
+     * Do NOT use:
+     *
+     * axios.post(cloudinaryUrl, ...)
+     *
+     * because your axios instance may contain:
+     *
+     * withCredentials: true
+     *
+     * That causes Cloudinary CORS failure.
+     *
+     * fetch() does not send credentials by default.
+     */
 
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.total) {
-            const progress = Math.round(
-              (progressEvent.loaded * 100) /
-                progressEvent.total
-            );
+    const response = await fetch(cloudinaryUrl, {
+      method: "POST",
+      body: data,
+      credentials: "omit",
+    });
 
-            setUploadProgress(progress);
+    let result = null;
 
-            console.log(
-              `☁️ Cloudinary upload: ${progress}%`
-            );
-          }
-        },
-      }
-    );
+    try {
+      result = await response.json();
+    } catch {
+      throw new Error(
+        "Cloudinary returned an invalid response."
+      );
+    }
 
-    if (!response.data?.secure_url) {
+    if (!response.ok) {
+      console.error("❌ Cloudinary error:", result);
+
+      throw new Error(
+        result?.error?.message ||
+          "Cloudinary upload failed."
+      );
+    }
+
+    if (!result?.secure_url) {
+      console.error(
+        "❌ Cloudinary response:",
+        result
+      );
+
       throw new Error(
         "Cloudinary upload completed but no video URL was returned."
       );
     }
 
-    console.log(
-      "✅ Cloudinary upload successful"
-    );
+    console.log("✅ Cloudinary upload successful");
+    console.log("🔗 Video URL:", result.secure_url);
 
-    console.log(
-      "🔗 Video URL:",
-      response.data.secure_url
-    );
+    setUploadProgress(100);
 
-    return response.data.secure_url;
+    return result.secure_url;
   };
 
   // ==========================================
@@ -433,9 +472,7 @@ export default function Upload() {
         );
 
         setLoading(false);
-
         navigate("/login");
-
         return;
       }
 
@@ -446,16 +483,15 @@ export default function Upload() {
       let videoUrl = form.video_url.trim();
 
       // ========================================
-      // FILE UPLOAD
+      // UPLOAD FILE TO CLOUDINARY
       // ========================================
 
       if (videoFile) {
         setMessage(
-          "☁️ Uploading your video..."
+          "☁️ Uploading your video to Cloudinary..."
         );
 
-        videoUrl =
-          await uploadToCloudinary(videoFile);
+        videoUrl = await uploadToCloudinary(videoFile);
 
         console.log(
           "✅ Cloudinary video URL:",
@@ -473,17 +509,16 @@ export default function Upload() {
         );
 
         setLoading(false);
-
         return;
       }
 
       // ========================================
-      // SEND DATA TO BACKEND
+      // SEND VIDEO DATA TO BACKEND
       // ========================================
 
       const postData = {
-        title: form.title,
-        description: form.description,
+        title: form.title.trim(),
+        description: form.description.trim(),
         category: form.category,
         genre: form.genre,
         level: form.level,
@@ -491,7 +526,7 @@ export default function Upload() {
       };
 
       console.log(
-        "📤 Sending post data:",
+        "📤 Sending post data to backend:",
         postData
       );
 
@@ -499,6 +534,10 @@ export default function Upload() {
         "📤 Saving video information..."
       );
 
+      /*
+       * Your normal axios instance is correct HERE
+       * because this request goes to your backend.
+       */
       const response = await axios.post(
         "/posts",
         postData
@@ -545,10 +584,7 @@ export default function Upload() {
         navigate("/talent");
       }, 1500);
     } catch (err) {
-      console.error(
-        "❌ Upload error:",
-        err
-      );
+      console.error("❌ Upload error:", err);
 
       console.error(
         "Backend / Cloudinary response:",
@@ -574,11 +610,27 @@ export default function Upload() {
       }
 
       // ========================================
-      // CLOUDINARY / OTHER ERROR
+      // NETWORK ERROR
+      // ========================================
+
+      if (
+        err.name === "TypeError" &&
+        err.message === "Failed to fetch"
+      ) {
+        setMessage(
+          "❌ Unable to connect to Cloudinary. Please check your Cloudinary configuration."
+        );
+
+        return;
+      }
+
+      // ========================================
+      // OTHER ERROR
       // ========================================
 
       setMessage(
         err.response?.data?.error ||
+          err.response?.data?.message ||
           err.message ||
           "❌ Failed to upload video. Please try again."
       );
@@ -588,11 +640,13 @@ export default function Upload() {
   };
 
   // ==========================================
-  // OPEN FILE PICKER
+  // OPEN VIDEO PICKER
   // ==========================================
 
   const openVideoPicker = () => {
-    if (loading) return;
+    if (loading) {
+      return;
+    }
 
     fileInputRef.current?.click();
   };
@@ -712,17 +766,27 @@ export default function Upload() {
               Upload Video
             </label>
 
-            {/* Hidden file input */}
+            {/*
+              IMPORTANT FOR ANDROID:
+
+              No capture="environment"
+
+              This lets Android/browser open its normal
+              file/photo/video picker instead of explicitly
+              requesting the camera.
+            */}
+
             <input
               ref={fileInputRef}
               id="video-file"
               type="file"
-              accept="video/*"
+              accept="video/*,.mp4,.webm,.mov,.m4v"
               onChange={handleVideoChange}
               className="hidden"
             />
 
             {/* Custom picker button */}
+
             <button
               type="button"
               onClick={openVideoPicker}
@@ -740,11 +804,12 @@ export default function Upload() {
               </span>
 
               <span className="block text-xs text-gray-300 mt-1">
-                Select a video from your Gallery or Files
+                Select a video from Gallery, Photos or Files
               </span>
             </button>
 
             {/* Selected video */}
+
             {videoFile && (
               <div className="rounded-xl bg-white/10 border border-white/20 p-4">
                 <div className="flex items-start justify-between gap-3">

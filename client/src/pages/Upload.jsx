@@ -219,7 +219,7 @@
 // }
 
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import axios from "../services/api";
 import { useNavigate } from "react-router-dom";
 
@@ -229,6 +229,8 @@ const levels = ["Beginner", "Intermediate", "Advanced"];
 
 export default function Upload() {
   const navigate = useNavigate();
+
+  const fileInputRef = useRef(null);
 
   const [form, setForm] = useState({
     title: "",
@@ -243,6 +245,10 @@ export default function Upload() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  // ==========================================
+  // FORM CHANGE
+  // ==========================================
 
   const handleChange = (e) => {
     setForm({
@@ -259,7 +265,6 @@ export default function Upload() {
     const file = e.target.files?.[0];
 
     if (!file) {
-      setVideoFile(null);
       return;
     }
 
@@ -274,20 +279,49 @@ export default function Upload() {
 
     if (file.size > maxSize) {
       setMessage("❌ Video size must be less than 100 MB.");
-      e.target.value = "";
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
       setVideoFile(null);
       return;
     }
 
-    if (!file.type.startsWith("video/")) {
+    // Check video type
+    if (!file.type || !file.type.startsWith("video/")) {
       setMessage("❌ Please select a valid video file.");
-      e.target.value = "";
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
       setVideoFile(null);
       return;
     }
 
     setMessage("");
     setVideoFile(file);
+
+    // Clear URL when selecting a file
+    setForm((previous) => ({
+      ...previous,
+      video_url: "",
+    }));
+  };
+
+  // ==========================================
+  // REMOVE SELECTED VIDEO
+  // ==========================================
+
+  const removeVideo = () => {
+    setVideoFile(null);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+
+    setUploadProgress(0);
   };
 
   // ==========================================
@@ -295,8 +329,11 @@ export default function Upload() {
   // ==========================================
 
   const uploadToCloudinary = async (file) => {
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+    const cloudName =
+      import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+
+    const uploadPreset =
+      import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
     if (!cloudName) {
       throw new Error(
@@ -310,7 +347,8 @@ export default function Upload() {
       );
     }
 
-    const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`;
+    const cloudinaryUrl =
+      `https://api.cloudinary.com/v1_1/${cloudName}/video/upload`;
 
     const data = new FormData();
 
@@ -323,26 +361,45 @@ export default function Upload() {
     console.log("📦 Type:", file.type);
     console.log("📏 Size:", file.size);
 
-    const response = await axios.post(cloudinaryUrl, data, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+    const response = await axios.post(
+      cloudinaryUrl,
+      data,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
 
-      onUploadProgress: (progressEvent) => {
-        if (progressEvent.total) {
-          const progress = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const progress = Math.round(
+              (progressEvent.loaded * 100) /
+                progressEvent.total
+            );
 
-          setUploadProgress(progress);
+            setUploadProgress(progress);
 
-          console.log(`☁️ Cloudinary upload: ${progress}%`);
-        }
-      },
-    });
+            console.log(
+              `☁️ Cloudinary upload: ${progress}%`
+            );
+          }
+        },
+      }
+    );
 
-    console.log("✅ Cloudinary upload successful");
-    console.log("🔗 Original URL:", response.data.secure_url);
+    if (!response.data?.secure_url) {
+      throw new Error(
+        "Cloudinary upload completed but no video URL was returned."
+      );
+    }
+
+    console.log(
+      "✅ Cloudinary upload successful"
+    );
+
+    console.log(
+      "🔗 Video URL:",
+      response.data.secure_url
+    );
 
     return response.data.secure_url;
   };
@@ -365,14 +422,26 @@ export default function Upload() {
 
       const token = localStorage.getItem("token");
 
-      console.log("🔑 Upload token exists:", !!token);
+      console.log(
+        "🔑 Upload token exists:",
+        !!token
+      );
 
       if (!token) {
-        setMessage("❌ Please login before uploading a video.");
+        setMessage(
+          "❌ Please login before uploading a video."
+        );
+
         setLoading(false);
+
         navigate("/login");
+
         return;
       }
+
+      // ========================================
+      // GET VIDEO URL
+      // ========================================
 
       let videoUrl = form.video_url.trim();
 
@@ -381,11 +450,17 @@ export default function Upload() {
       // ========================================
 
       if (videoFile) {
-        setMessage("☁️ Uploading your video...");
+        setMessage(
+          "☁️ Uploading your video..."
+        );
 
-        videoUrl = await uploadToCloudinary(videoFile);
+        videoUrl =
+          await uploadToCloudinary(videoFile);
 
-        console.log("✅ Video URL:", videoUrl);
+        console.log(
+          "✅ Cloudinary video URL:",
+          videoUrl
+        );
       }
 
       // ========================================
@@ -393,8 +468,12 @@ export default function Upload() {
       // ========================================
 
       if (!videoUrl) {
-        setMessage("❌ Please select a video or enter a video URL.");
+        setMessage(
+          "❌ Please select a video or enter a video URL."
+        );
+
         setLoading(false);
+
         return;
       }
 
@@ -411,15 +490,32 @@ export default function Upload() {
         video_url: videoUrl,
       };
 
-      console.log("📤 Sending post data:", postData);
+      console.log(
+        "📤 Sending post data:",
+        postData
+      );
 
-      setMessage("📤 Saving video information...");
+      setMessage(
+        "📤 Saving video information..."
+      );
 
-      const response = await axios.post("/posts", postData);
+      const response = await axios.post(
+        "/posts",
+        postData
+      );
 
-      console.log("✅ Backend response:", response.data);
+      console.log(
+        "✅ Backend response:",
+        response.data
+      );
 
-      setMessage("✅ Video uploaded successfully!");
+      // ========================================
+      // SUCCESS
+      // ========================================
+
+      setMessage(
+        "✅ Video uploaded successfully! Check your Talent Gallery."
+      );
 
       // ========================================
       // RESET FORM
@@ -437,11 +533,8 @@ export default function Upload() {
       setVideoFile(null);
       setUploadProgress(0);
 
-      // Reset file input
-      const fileInput = document.getElementById("video-file");
-
-      if (fileInput) {
-        fileInput.value = "";
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
       }
 
       // ========================================
@@ -452,12 +545,19 @@ export default function Upload() {
         navigate("/talent");
       }, 1500);
     } catch (err) {
-      console.error("❌ Upload error:", err);
+      console.error(
+        "❌ Upload error:",
+        err
+      );
 
       console.error(
         "Backend / Cloudinary response:",
         err.response?.data
       );
+
+      // ========================================
+      // AUTH ERROR
+      // ========================================
 
       if (err.response?.status === 401) {
         setMessage(
@@ -469,17 +569,37 @@ export default function Upload() {
         setTimeout(() => {
           navigate("/login");
         }, 1500);
-      } else {
-        setMessage(
-          err.response?.data?.error ||
-            err.message ||
-            "❌ Failed to upload video. Please try again."
-        );
+
+        return;
       }
+
+      // ========================================
+      // CLOUDINARY / OTHER ERROR
+      // ========================================
+
+      setMessage(
+        err.response?.data?.error ||
+          err.message ||
+          "❌ Failed to upload video. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  // ==========================================
+  // OPEN FILE PICKER
+  // ==========================================
+
+  const openVideoPicker = () => {
+    if (loading) return;
+
+    fileInputRef.current?.click();
+  };
+
+  // ==========================================
+  // UI
+  // ==========================================
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
@@ -494,10 +614,13 @@ export default function Upload() {
           Upload Your Talent
         </h1>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* ================================= */}
-          {/* TITLE */}
-          {/* ================================= */}
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6"
+        >
+          {/* =================================
+              TITLE
+          ================================= */}
 
           <input
             type="text"
@@ -505,13 +628,14 @@ export default function Upload() {
             placeholder="Video Title"
             value={form.title}
             onChange={handleChange}
+            autoComplete="off"
             className="w-full px-4 py-3 rounded-lg border bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             required
           />
 
-          {/* ================================= */}
-          {/* DESCRIPTION */}
-          {/* ================================= */}
+          {/* =================================
+              DESCRIPTION
+          ================================= */}
 
           <textarea
             name="description"
@@ -522,9 +646,9 @@ export default function Upload() {
             className="w-full px-4 py-3 rounded-lg border bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
 
-          {/* ================================= */}
-          {/* CATEGORY / GENRE / LEVEL */}
-          {/* ================================= */}
+          {/* =================================
+              CATEGORY / GENRE / LEVEL
+          ================================= */}
 
           <div className="flex flex-col md:flex-row gap-4">
             <select
@@ -535,7 +659,10 @@ export default function Upload() {
               required
             >
               {categories.map((category) => (
-                <option key={category} value={category}>
+                <option
+                  key={category}
+                  value={category}
+                >
                   {category}
                 </option>
               ))}
@@ -549,7 +676,10 @@ export default function Upload() {
               required
             >
               {genres.map((genre) => (
-                <option key={genre} value={genre}>
+                <option
+                  key={genre}
+                  value={genre}
+                >
                   {genre}
                 </option>
               ))}
@@ -563,76 +693,124 @@ export default function Upload() {
               required
             >
               {levels.map((level) => (
-                <option key={level} value={level}>
+                <option
+                  key={level}
+                  value={level}
+                >
                   {level}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* ================================= */}
-          {/* VIDEO FILE */}
-          {/* ================================= */}
+          {/* =================================
+              VIDEO FILE
+          ================================= */}
 
-          <div className="space-y-2">
-            <label
-              htmlFor="video-file"
-              className="block text-white font-semibold"
-            >
+          <div className="space-y-3">
+            <label className="block text-white font-semibold">
               Upload Video
             </label>
 
+            {/* Hidden file input */}
             <input
+              ref={fileInputRef}
               id="video-file"
               type="file"
               accept="video/*"
-              capture="environment"
               onChange={handleVideoChange}
-              className="w-full px-3 py-3 rounded-lg border border-white/30 bg-white/20 text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:text-white file:font-semibold"
+              className="hidden"
             />
 
+            {/* Custom picker button */}
+            <button
+              type="button"
+              onClick={openVideoPicker}
+              disabled={loading}
+              className="w-full py-4 px-4 rounded-xl border-2 border-dashed border-white/40 bg-white/10 text-white font-semibold hover:bg-white/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="text-2xl block mb-1">
+                🎥
+              </span>
+
+              <span className="block">
+                {videoFile
+                  ? "Change Video"
+                  : "Choose Video from Device"}
+              </span>
+
+              <span className="block text-xs text-gray-300 mt-1">
+                Select a video from your Gallery or Files
+              </span>
+            </button>
+
+            {/* Selected video */}
             {videoFile && (
-              <div className="rounded-lg bg-white/10 border border-white/20 p-3">
-                <p className="text-white text-sm break-all">
-                  🎥 {videoFile.name}
-                </p>
+              <div className="rounded-xl bg-white/10 border border-white/20 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-white text-sm break-all">
+                      🎥 {videoFile.name}
+                    </p>
 
-                <p className="text-gray-300 text-xs mt-1">
-                  {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
-                </p>
+                    <p className="text-gray-300 text-xs mt-1">
+                      {(
+                        videoFile.size /
+                        (1024 * 1024)
+                      ).toFixed(2)}{" "}
+                      MB
+                    </p>
 
-                <p className="text-gray-300 text-xs mt-1">
-                  {videoFile.type || "Video"}
-                </p>
+                    <p className="text-gray-300 text-xs mt-1">
+                      {videoFile.type || "Video"}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={removeVideo}
+                    disabled={loading}
+                    className="shrink-0 px-3 py-1 rounded-lg bg-red-500/80 text-white text-xs font-semibold hover:bg-red-600 disabled:opacity-50"
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
             )}
           </div>
 
-          {/* ================================= */}
-          {/* CLOUDINARY PROGRESS */}
-          {/* ================================= */}
+          {/* =================================
+              CLOUDINARY PROGRESS
+          ================================= */}
 
-          {loading && videoFile && uploadProgress > 0 && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm text-white">
-                <span>Uploading video...</span>
-                <span>{uploadProgress}%</span>
+          {loading &&
+            videoFile &&
+            uploadProgress > 0 && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm text-white">
+                  <span>
+                    Uploading video...
+                  </span>
+
+                  <span>
+                    {uploadProgress}%
+                  </span>
+                </div>
+
+                <div className="w-full h-3 bg-white/20 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-purple-600 to-indigo-600 transition-all duration-300"
+                    style={{
+                      width: `${uploadProgress}%`,
+                    }}
+                  />
+                </div>
               </div>
+            )}
 
-              <div className="w-full h-3 bg-white/20 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-purple-600 to-indigo-600 transition-all duration-300"
-                  style={{
-                    width: `${uploadProgress}%`,
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* ================================= */}
-          {/* OR VIDEO URL */}
-          {/* ================================= */}
+          {/* =================================
+              OR VIDEO URL
+          ================================= */}
 
           <div className="text-center text-gray-300 font-semibold">
             OR
@@ -644,13 +822,13 @@ export default function Upload() {
             placeholder="Video URL (YouTube/S3/Cloudinary link)"
             value={form.video_url}
             onChange={handleChange}
-            disabled={!!videoFile}
+            disabled={!!videoFile || loading}
             className="w-full px-4 py-3 rounded-lg border bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
           />
 
-          {/* ================================= */}
-          {/* SUBMIT */}
-          {/* ================================= */}
+          {/* =================================
+              SUBMIT
+          ================================= */}
 
           <button
             type="submit"
@@ -665,9 +843,9 @@ export default function Upload() {
           </button>
         </form>
 
-        {/* ================================= */}
-        {/* MESSAGE */}
-        {/* ================================= */}
+        {/* =================================
+            MESSAGE
+        ================================= */}
 
         {message && (
           <p
@@ -687,3 +865,5 @@ export default function Upload() {
     </div>
   );
 }
+
+

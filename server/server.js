@@ -276,6 +276,8 @@
 
 
 import dotenv from "dotenv";
+
+// Load environment variables FIRST
 dotenv.config();
 
 import express from "express";
@@ -283,6 +285,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 
 import connectDB from "./config/db.js";
+
 import authRoutes from "./routes/authRoutes.js";
 import videoRoutes from "./routes/videoRoutes.js";
 import playlistRoutes from "./routes/playlistRoutes.js";
@@ -353,52 +356,42 @@ const PORT = process.env.PORT || 5000;
 app.set("trust proxy", 1);
 
 // ======================================================
-// CORS CONFIGURATION
+// CORS
 // ======================================================
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "http://localhost:3000",
-
-  // Vercel production frontend
   "https://talent-hub-client-five.vercel.app",
-
-  // Render frontend if required
-  "https://talent-hub-client-0nbq.onrender.com",
 ];
 
-// Check whether an origin is allowed
-const isAllowedOrigin = (origin) => {
-  if (!origin) {
-    return true;
-  }
-
-  // Exact allowed origins
-  if (allowedOrigins.includes(origin)) {
-    return true;
-  }
-
-  // Allow Vercel deployments
-  if (
-    /^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/.test(origin)
-  ) {
-    return true;
-  }
-
-  return false;
+// Allow Vercel preview deployments
+const isVercelOrigin = (origin) => {
+  return /^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/.test(origin);
 };
 
 const corsOptions = {
   origin: (origin, callback) => {
-    console.log("🌍 CORS Origin:", origin || "No origin");
-
-    if (isAllowedOrigin(origin)) {
-      console.log("✅ CORS allowed:", origin || "No origin");
-      callback(null, true);
-    } else {
-      console.log("❌ CORS blocked:", origin);
-      callback(new Error("Not allowed by CORS"));
+    // Requests without Origin
+    // e.g. Postman, curl, server-to-server
+    if (!origin) {
+      return callback(null, true);
     }
+
+    // Exact allowed origins
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Vercel deployments
+    if (isVercelOrigin(origin)) {
+      return callback(null, true);
+    }
+
+    console.log("❌ CORS blocked:", origin);
+
+    return callback(
+      new Error(`CORS blocked origin: ${origin}`)
+    );
   },
 
   credentials: true,
@@ -415,28 +408,15 @@ const corsOptions = {
   allowedHeaders: [
     "Content-Type",
     "Authorization",
-    "Accept",
-    "Origin",
-    "X-Requested-With",
-  ],
-
-  exposedHeaders: [
-    "Content-Length",
-    "Content-Type",
   ],
 
   optionsSuccessStatus: 204,
 };
 
-// ======================================================
-// CORS
-// ======================================================
-
-// Main CORS middleware
 app.use(cors(corsOptions));
 
-// Explicitly handle preflight requests
-app.options(/.*/, cors(corsOptions));
+// Explicitly handle OPTIONS requests
+app.options("*", cors(corsOptions));
 
 // ======================================================
 // BODY PARSERS
@@ -466,9 +446,14 @@ app.use(cookieParser());
 // ======================================================
 
 app.use((req, res, next) => {
-  console.log("======================================");
-  console.log(`📡 ${req.method} ${req.originalUrl}`);
-  console.log("🌍 Origin:", req.headers.origin || "None");
+  console.log(
+    `📡 ${req.method} ${req.originalUrl}`
+  );
+
+  console.log(
+    "🌐 Origin:",
+    req.headers.origin || "None"
+  );
 
   if (req.headers.authorization) {
     console.log("🔐 Authorization: Present");
@@ -480,28 +465,17 @@ app.use((req, res, next) => {
 });
 
 // ======================================================
-// CONNECT DATABASE
-// ======================================================
-
-connectDB();
-
-// ======================================================
 // ROUTES
 // ======================================================
 
-// Authentication
 app.use("/api/auth", authRoutes);
 
-// Videos
 app.use("/api/videos", videoRoutes);
 
-// Users
 app.use("/api/users", userRoutes);
 
-// Posts
 app.use("/api/posts", postRoutes);
 
-// Playlists
 app.use("/api/playlists", playlistRoutes);
 
 // ======================================================
@@ -552,21 +526,21 @@ app.use((err, req, res, next) => {
   console.error("======================================");
   console.error("🔥 GLOBAL SERVER ERROR");
   console.error("======================================");
+
   console.error("Message:", err.message);
-  console.error("Stack:", err.stack);
 
   // CORS error
-  if (err.message === "Not allowed by CORS") {
+  if (err.message.startsWith("CORS blocked origin:")) {
     return res.status(403).json({
       success: false,
-      error: "CORS policy does not allow access from this origin.",
-      origin: req.headers.origin || null,
+      error: "CORS policy does not allow this origin.",
     });
   }
 
   return res.status(500).json({
     success: false,
     error: "Server error",
+
     details:
       process.env.NODE_ENV === "production"
         ? undefined
@@ -578,14 +552,38 @@ app.use((err, req, res, next) => {
 // START SERVER
 // ======================================================
 
-app.listen(PORT, () => {
-  console.log("======================================");
-  console.log("🚀 TalentHub Server Started");
-  console.log("======================================");
-  console.log(`📡 Server running on port ${PORT}`);
-  console.log(`🌐 http://localhost:${PORT}`);
-  console.log(
-    `❤️ Health: http://localhost:${PORT}/api/health`
-  );
-  console.log("======================================");
-});
+const startServer = async () => {
+  try {
+    // Connect to MongoDB BEFORE starting the server
+    await connectDB();
+
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log("======================================");
+      console.log("🚀 TalentHub Server Started");
+      console.log("======================================");
+
+      console.log(
+        `📡 Server running on port ${PORT}`
+      );
+
+      console.log(
+        `🌐 Port binding: 0.0.0.0:${PORT}`
+      );
+
+      console.log(
+        `❤️ Health: /api/health`
+      );
+
+      console.log("======================================");
+    });
+  } catch (error) {
+    console.error(
+      "❌ Server failed to start:",
+      error.message
+    );
+
+    process.exit(1);
+  }
+};
+
+startServer();
